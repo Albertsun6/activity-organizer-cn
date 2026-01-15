@@ -82,3 +82,10 @@
 代码改动：无。
 状态标签：✅完成
 ---
+## 2026-01-16 01:05
+对话标题：同步最新代码到 GitHub
+用户需求：GitHub 上不是最新代码。
+解决方案：新增 `.gitignore` 排除 `assets/config.js` 与 `.DS_Store`，提交并推送最新改动到远端仓库。
+代码改动：新增 `.gitignore`；提交 README、index.html、assets/app.js、assets/style.css、assets/config.example.js、docs/Chatlog.md 等更新到远端。
+状态标签：✅完成
+---
