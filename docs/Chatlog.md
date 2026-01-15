@@ -89,3 +89,10 @@
 代码改动：新增 `.gitignore`；提交 README、index.html、assets/app.js、assets/style.css、assets/config.example.js、docs/Chatlog.md 等更新到远端。
 状态标签：✅完成
 ---
+## 2026-01-16 01:09
+对话标题：修复 GitHub Pages 配置缺失
+用户需求：本地与 GitHub Pages 显示不一致。
+解决方案：将 `assets/config.js` 提交到仓库以保证线上读取 Supabase 配置；更新 .gitignore 仅忽略系统文件。
+代码改动：更新 `.gitignore`，提交 `assets/config.js`。
+状态标签：✅完成
+---
