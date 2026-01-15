@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>活动管理工具</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>活动管理工具</h1>
+        <p class="subtitle">单场活动 · 本地存储 · 报名 / 候补 / 签到 / 导出</p>
+      </div>
+      <div class="tag">中文 · 纯前端</div>
+    </header>
+
+    <section class="card" id="event-card">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">活动信息</p>
+          <h2>基本设置</h2>
+        </div>
+        <div class="action-row">
+          <button id="saveEvent">保存设置</button>
+          <button id="downloadIcs" class="ghost">下载日历 (.ics)</button>
+          <button id="copyShare" class="ghost">复制分享文案</button>
+        </div>
+      </div>
+      <form id="eventForm" class="grid two-col">
+        <label>活动名称
+          <input type="text" id="eventTitle" placeholder="例：社区技术沙龙" required>
+        </label>
+        <label>日期时间
+          <input type="datetime-local" id="eventDate" required>
+        </label>
+        <label>地点
+          <input type="text" id="eventLocation" placeholder="线上 / 线下地址" required>
+        </label>
+        <label>名额
+          <input type="number" id="eventCapacity" min="1" value="50" required>
+        </label>
+        <label class="full">说明
+          <textarea id="eventDesc" rows="3" placeholder="补充议程、携带物品等"></textarea>
+        </label>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">报名</p>
+          <h2>新增报名 / 候补</h2>
+        </div>
+        <div class="stats">
+          <span id="statCapacity">名额 0</span>
+          <span id="statConfirmed">已报 0</span>
+          <span id="statWait">候补 0</span>
+          <span id="statCheckin">签到 0</span>
+        </div>
+      </div>
+      <form id="regForm" class="grid two-col">
+        <label>姓名
+          <input type="text" id="name" required>
+        </label>
+        <label>邮箱
+          <input type="email" id="email" placeholder="用于日历 / 通知，可留空">
+        </label>
+        <label>手机号
+          <input type="tel" id="phone" placeholder="便于现场确认">
+        </label>
+        <label>备注
+          <input type="text" id="note" placeholder="公司 / 职位 / 口味等">
+        </label>
+        <div class="full align-end">
+          <button type="submit">提交报名</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">名单</p>
+          <h2>已报名</h2>
+        </div>
+        <div class="action-row">
+          <button id="exportCsv" class="ghost">导出 CSV</button>
+          <button id="exportJson" class="ghost">导出 JSON</button>
+          <label class="ghost file-btn">
+            导入 JSON
+            <input type="file" id="importJson" accept=".json">
+          </label>
+          <button id="resetData" class="danger ghost">清空数据</button>
+        </div>
+      </div>
+      <div class="table" id="confirmedTable"></div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">候补</p>
+          <h2>等候名单</h2>
+        </div>
+        <div class="action-row">
+          <button id="fillFromWaitlist" class="ghost">空位自动补位</button>
+        </div>
+      </div>
+      <div class="table" id="waitlistTable"></div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">签到</p>
+          <h2>现场扫描</h2>
+        </div>
+      </div>
+      <p class="muted">每位报名者行操作栏有“二维码”，可生成个人签到链接。入场扫描后自动标记签到；同一链接多次扫描仍只记录一次。</p>
+      <p class="muted">也可手动点击“签到”按钮，或在电脑端输入链接参数 <code>?checkin=报名ID</code> 进行快捷签到。</p>
+    </section>
+  </div>
+
+  <div id="toast"></div>
+
+  <div id="qrLayer" class="qr-layer hidden">
+    <div class="qr-card">
+      <div class="qr-head">
+        <h3 id="qrTitle">签到二维码</h3>
+        <button id="closeQr" class="ghost">关闭</button>
+      </div>
+      <div id="qrContainer" class="qr-box"></div>
+      <p class="muted" id="qrLink"></p>
+    </div>
+  </div>
+
+  <script src="assets/app.js"></script>
+</body>
+</html>
