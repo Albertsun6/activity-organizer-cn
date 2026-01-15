@@ -6,6 +6,9 @@
   <title>活动管理工具</title>
   <link rel="stylesheet" href="assets/style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.46.0/dist/umd/supabase.min.js"></script>
+  <script src="assets/config.js"></script>
 </head>
 <body>
   <div class="container">
@@ -17,7 +20,15 @@
       <div class="tag">中文 · 纯前端</div>
     </header>
 
-    <section class="card" id="event-card">
+    <nav class="tabs">
+      <button class="tab-btn active" data-target="basic">基本信息</button>
+      <button class="tab-btn" data-target="agenda">日程管理</button>
+      <button class="tab-btn" data-target="signup">报名 / 签到</button>
+      <button class="tab-btn" data-target="poster">海报导出</button>
+      <button class="tab-btn" data-target="assets">物资 / 费用</button>
+    </nav>
+
+    <section class="card page active" data-page="basic" id="event-card">
       <div class="section-head">
         <div>
           <p class="eyebrow">活动信息</p>
@@ -27,15 +38,26 @@
           <button id="saveEvent">保存设置</button>
           <button id="downloadIcs" class="ghost">下载日历 (.ics)</button>
           <button id="copyShare" class="ghost">复制分享文案</button>
+        <button id="refreshEvent" class="ghost">拉取最新</button>
         </div>
       </div>
       <form id="eventForm" class="grid two-col">
+        <label>活动ID（用于分享/线上存储）
+          <input type="text" id="eventId" placeholder="例：demo-2026" required>
+        </label>
+        <label>管理密码（写入校验，留空只读）
+          <input type="password" id="adminPassword" placeholder="仅本地校验，不存明文">
+        </label>
         <label>活动名称
           <input type="text" id="eventTitle" placeholder="例：社区技术沙龙" required>
         </label>
-        <label>日期时间
-          <input type="datetime-local" id="eventDate" required>
+        <label>日期
+          <input type="date" id="eventDate" required>
         </label>
+        <div class="weekday-display">
+          <span class="muted">星期</span>
+          <strong id="weekdayLabel">-</strong>
+        </div>
         <label>地点
           <input type="text" id="eventLocation" placeholder="线上 / 线下地址" required>
         </label>
@@ -45,10 +67,116 @@
         <label class="full">说明
           <textarea id="eventDesc" rows="3" placeholder="补充议程、携带物品等"></textarea>
         </label>
+        <label class="full">到达说明
+          <textarea id="eventRoute" rows="2" placeholder="地铁/公交/停车/门禁指引等"></textarea>
+        </label>
       </form>
     </section>
 
-    <section class="card">
+    <section class="card page" data-page="assets">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">活动物资</p>
+          <h2>采购与数量</h2>
+        </div>
+        <div class="action-row">
+          <span id="statSuppliesTotal" class="muted">物资项 0</span>
+          <button id="exportSupplyCsv" class="ghost">导出物资 CSV</button>
+        </div>
+      </div>
+      <form id="supplyForm" class="grid two-col">
+        <label>名称
+          <input type="text" id="supplyName" placeholder="例：易拉宝 / 矿泉水" required>
+        </label>
+        <label>数量
+          <input type="number" id="supplyQty" min="1" value="1" required>
+        </label>
+        <label>单位
+          <input type="text" id="supplyUnit" placeholder="瓶 / 份 / 个" >
+        </label>
+        <label>备注
+          <input type="text" id="supplyNote" placeholder="规格 / 渠道 / 负责人">
+        </label>
+        <div class="full align-end">
+          <button type="submit">添加物资</button>
+        </div>
+      </form>
+      <div class="table" id="supplyTable" style="margin-top:12px;"></div>
+    </section>
+
+    <section class="card page" data-page="assets">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">费用</p>
+          <h2>预算 / 支出</h2>
+        </div>
+        <div class="action-row">
+          <span id="statExpenseTotal" class="muted">合计 0</span>
+          <button id="exportExpenseCsv" class="ghost">导出费用 CSV</button>
+        </div>
+      </div>
+      <form id="expenseForm" class="grid two-col">
+        <label>项目
+          <input type="text" id="expenseItem" placeholder="例：场地费 / 茶歇" required>
+        </label>
+        <label>金额 (￥)
+          <input type="number" id="expenseAmount" min="0" step="0.01" value="0" required>
+        </label>
+        <label>分类
+          <select id="expenseCategory">
+            <option value="场地">场地</option>
+            <option value="物料">物料</option>
+            <option value="交通">交通</option>
+            <option value="餐饮">餐饮</option>
+            <option value="其他">其他</option>
+          </select>
+        </label>
+        <label>支付人/方式
+          <input type="text" id="expensePayer" placeholder="公司报销 / 个人垫付">
+        </label>
+        <label>备注
+          <input type="text" id="expenseNote" placeholder="开票信息/支付时间">
+        </label>
+        <div class="full align-end">
+          <button type="submit">记录费用</button>
+        </div>
+      </form>
+      <div class="table" id="expenseTable" style="margin-top:12px;"></div>
+      <div id="expenseSummary" class="muted" style="margin-top:8px;"></div>
+    </section>
+
+    <section class="card page" data-page="agenda">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">活动日程</p>
+          <h2>Agenda</h2>
+        </div>
+      </div>
+      <form id="agendaForm" class="grid two-col">
+        <label>开始
+          <input type="time" id="agendaStart" required>
+        </label>
+        <label>结束
+          <input type="time" id="agendaEnd" required>
+        </label>
+        <label>主题
+          <input type="text" id="agendaTitle" placeholder="例：开场 / Keynote" required>
+        </label>
+        <label>嘉宾 / 主讲
+          <input type="text" id="agendaSpeaker" placeholder="可选">
+        </label>
+        <label class="full">备注
+          <input type="text" id="agendaNote" placeholder="形式 / 设备 / 链接等">
+        </label>
+        <div class="full align-end">
+          <button type="submit">添加日程</button>
+        </div>
+      </form>
+      <p class="muted" style="margin:8px 0 0;">建议使用 24 小时制，按时间自动排序，可上移/下移调整。</p>
+      <div class="table" id="agendaTable" style="margin-top:12px;"></div>
+    </section>
+
+    <section class="card page" data-page="signup">
       <div class="section-head">
         <div>
           <p class="eyebrow">报名</p>
@@ -57,7 +185,6 @@
         <div class="stats">
           <span id="statCapacity">名额 0</span>
           <span id="statConfirmed">已报 0</span>
-          <span id="statWait">候补 0</span>
           <span id="statCheckin">签到 0</span>
         </div>
       </div>
@@ -80,7 +207,7 @@
       </form>
     </section>
 
-    <section class="card">
+    <section class="card page" data-page="signup">
       <div class="section-head">
         <div>
           <p class="eyebrow">名单</p>
@@ -99,20 +226,7 @@
       <div class="table" id="confirmedTable"></div>
     </section>
 
-    <section class="card">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">候补</p>
-          <h2>等候名单</h2>
-        </div>
-        <div class="action-row">
-          <button id="fillFromWaitlist" class="ghost">空位自动补位</button>
-        </div>
-      </div>
-      <div class="table" id="waitlistTable"></div>
-    </section>
-
-    <section class="card">
+    <section class="card page" data-page="signup">
       <div class="section-head">
         <div>
           <p class="eyebrow">签到</p>
@@ -121,6 +235,61 @@
       </div>
       <p class="muted">每位报名者行操作栏有“二维码”，可生成个人签到链接。入场扫描后自动标记签到；同一链接多次扫描仍只记录一次。</p>
       <p class="muted">也可手动点击“签到”按钮，或在电脑端输入链接参数 <code>?checkin=报名ID</code> 进行快捷签到。</p>
+    </section>
+
+    <section class="card page" data-page="poster">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">海报</p>
+          <h2>生成并导出</h2>
+        </div>
+        <div class="action-row">
+          <button id="exportPoster">导出海报 PNG</button>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:0;">根据当前填写的信息与日程生成活动海报，可直接另存为图片分享。</p>
+      <div id="posterPreview" class="poster">
+        <div class="poster-header">
+          <div>
+            <p class="eyebrow">活动</p>
+            <h3 id="posterTitle">活动标题</h3>
+          </div>
+          <div class="poster-badge">报名进行中</div>
+        </div>
+        <div class="poster-info">
+          <div>
+            <p class="poster-label">日期</p>
+            <p id="posterDate">-</p>
+          </div>
+          <div>
+            <p class="poster-label">地点</p>
+            <p id="posterLocation">-</p>
+          </div>
+          <div>
+            <p class="poster-label">名额</p>
+            <p id="posterCapacity">-</p>
+          </div>
+        </div>
+        <div class="poster-route">
+          <p class="poster-label">到达说明</p>
+          <p id="posterRoute">-</p>
+        </div>
+        <div class="poster-desc">
+          <p class="poster-label">说明</p>
+          <p id="posterDesc">-</p>
+        </div>
+        <div class="poster-agenda">
+          <div class="poster-label">日程</div>
+          <ul id="posterAgenda"></ul>
+        </div>
+        <div class="poster-footer">
+          <div id="posterQr"></div>
+          <div class="poster-link">
+            <p class="poster-label">报名 / 签到链接</p>
+            <p id="posterLink">-</p>
+          </div>
+        </div>
+      </div>
     </section>
   </div>
 
